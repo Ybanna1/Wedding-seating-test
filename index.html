@@ -3,79 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Please Find Your Seat</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Roboto&display=swap" rel="stylesheet">
+  <title>Find Your Seat</title>
   <style>
     body {
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+      padding: 2rem 1rem;
       text-align: center;
-      padding: 2rem;
-      background: linear-gradient(to right, #fffdfd, #f7f3f0);
-      color: #333;
     }
 
     h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.5rem;
-      margin-bottom: 1.5rem;
-      animation: fadeIn 1s ease-in-out;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #333;
     }
 
     input[type="text"] {
       padding: 12px;
-      font-size: 18px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
+      font-size: 1rem;
       width: 90%;
       max-width: 400px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      transition: 0.3s;
-    }
-
-    input[type="text"]:focus {
-      outline: none;
-      border-color: #aaa;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 1rem;
     }
 
     #results {
-      margin-top: 2rem;
-      font-size: 18px;
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      color: #212529;
     }
 
     .entry {
-      background-color: #fff;
+      background: #fff;
       margin: 0.5rem auto;
-      padding: 0.75rem 1.2rem;
+      padding: 1rem;
+      max-width: 400px;
       border-radius: 10px;
-      max-width: 450px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      animation: slideIn 0.3s ease-out;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    .entry b {
-      font-weight: 600;
-      color: #444;
+    .links {
+      margin-top: 2rem;
+      font-size: 1rem;
     }
 
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .links a {
+      display: block;
+      margin: 0.5rem auto;
+      color: #007bff;
+      text-decoration: none;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0 }
-      to { opacity: 1 }
+    .links a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
 
-  <h1>Please Find Your Seat</h1>
-
-  <input type="text" id="search" placeholder="Start typing your name..." />
-
+  <h1>Find Your Seat</h1>
+  <input type="text" id="search" placeholder="Enter your name..." />
   <div id="results"></div>
+
+  <div class="links">
+    <a href="floorplan.jpg" target="_blank">📍 View Floor Plan</a>
+    <a href="menu.jpg" target="_blank">🍽️ View Menu</a>
+  </div>
 
   <script>
     const people = [
@@ -86,13 +80,13 @@
       { name: "justin lee", displayName: "Justin Lee", table: "69" },
       { name: "jiwoon kim", displayName: "Jiwoon Kim", table: "69" },
       { name: "lewis he", displayName: "Lewis He", table: "69" }
-      // Add more entries as needed
     ];
 
     document.getElementById('search').addEventListener('input', function () {
       const input = this.value.toLowerCase().trim();
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = '';
+
       if (input === '') return;
 
       const filtered = people.filter(p => p.name.includes(input));
@@ -104,10 +98,11 @@
       filtered.forEach(p => {
         const div = document.createElement('div');
         div.className = 'entry';
-        div.innerHTML = `<span>${p.displayName} — <b>Table ${p.table}</b></span>`;
+        div.textContent = `${p.displayName} — Table ${p.table}`;
         resultsDiv.appendChild(div);
       });
     });
   </script>
+
 </body>
 </html>
