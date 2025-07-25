@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Find Your Seat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 2rem;
+      background-color: #fdfdfd;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px auto;
+      width: 90%;
+      max-width: 400px;
+    }
+    #results {
+      margin-top: 2rem;
+      font-size: 18px;
+    }
+    .entry {
+      padding: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Please Find Your Seat</h1>
+
+  <input type="text" id="search" placeholder="Enter your name..." />
+
+  <div id="results"></div>
+
+  <script>
+    const people = [
+      { name: "john smith", displayName: "John Smith", table: "1" },
+      { name: "jane doe", displayName: "Jane Doe", table: "2" }
+      // Add more entries here...
+    ];
+
+    document.getElementById('search').addEventListener('input', function () {
+      const input = this.value.toLowerCase().trim();
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+      if (input === '') return;
+
+      const filtered = people.filter(p => p.name.includes(input));
+      if (filtered.length === 0) {
+        resultsDiv.innerHTML = '<div class="entry">No match found</div>';
+        return;
+      }
+
+      filtered.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.textContent = `${p.displayName} — Table ${p.table}`;
+        resultsDiv.appendChild(div);
+      });
+    });
+  </script>
+</body>
+</html>
