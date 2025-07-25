@@ -2,163 +2,177 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Please Find Your Seat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Find Your Seat</title>
   <style>
     body {
-      font-family: 'Arial', sans-serif;
-      background-color: #f9f9f9;
+      font-family: 'Segoe UI', sans-serif;
+      background: #fdfdfd;
       margin: 0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      padding: 2rem 1rem;
+      text-align: center;
+      color: #333;
     }
 
     h1 {
-      margin-bottom: 20px;
-      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
     }
 
     input[type="text"] {
-      width: 100%;
-      max-width: 400px;
       padding: 12px;
       font-size: 16px;
-      margin-bottom: 20px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    .result {
-      margin-top: 10px;
-      background: #fff;
-      padding: 12px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      max-width: 400px;
       width: 100%;
-      text-align: center;
+      max-width: 400px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
-    .link-container {
-      margin-top: 30px;
+    #results {
+      margin-top: 2rem;
+      font-size: 18px;
     }
 
-    .link-container a {
-      display: inline-block;
-      margin: 10px;
-      text-decoration: underline;
-      color: #007bff;
+    .entry {
+      background: #fff;
+      padding: 1rem;
+      margin: 0.5rem auto;
+      max-width: 400px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .link-buttons {
+      margin-top: 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .popup-btn {
+      background-color: #444;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: bold;
+      transition: background 0.3s ease;
     }
 
-    /* Popup Styling */
-    #popup {
+    .popup-btn:hover {
+      background-color: #666;
+    }
+
+    .modal {
       display: none;
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      justify-content: center;
-      align-items: center;
       z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8);
     }
 
-    #popupContent {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 90%;
-      max-height: 90%;
-      overflow: auto;
+    .modal-content {
       position: relative;
+      background: white;
+      margin: 10% auto;
+      padding: 1rem;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 10px;
     }
 
-    #popupContent img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    #popupClose {
+    .close {
       position: absolute;
       top: 10px;
       right: 20px;
       font-size: 24px;
       cursor: pointer;
-      color: #333;
+    }
+
+    iframe {
+      width: 100%;
+      height: 70vh;
+      border: none;
     }
   </style>
 </head>
 <body>
 
   <h1>Please Find Your Seat</h1>
-  <input type="text" id="searchInput" placeholder="Type your name..." onkeyup="filterGuests()" />
+  <input type="text" id="search" placeholder="Enter your name..." />
+  <div id="results"></div>
 
-  <div id="resultsContainer"></div>
-
-  <div class="link-container">
-    <a onclick="showPopup('floorplan')">View Floorplan</a>
-    <a onclick="showPopup('menu')">View Menu</a>
+  <div class="link-buttons">
+    <button class="popup-btn" onclick="openModal('floor')">🗺️ View Floor Plan</button>
+    <button class="popup-btn" onclick="openModal('menu')">🍽️ View Menu</button>
   </div>
 
-  <!-- Popup Modal -->
-  <div id="popup">
-    <div id="popupContent">
-      <span id="popupClose" onclick="hidePopup()">&times;</span>
-      <img id="popupImage" src="" alt="Popup Image">
+  <!-- Modal Windows -->
+  <div id="floor-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('floor')">&times;</span>
+      <iframe src="https://drive.google.com/file/d/16F1PHsWL9Rkrf5MFFftFo471JGn2pTn0/preview"></iframe>
+    </div>
+  </div>
+
+  <div id="menu-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('menu')">&times;</span>
+      <iframe src="https://drive.google.com/file/d/1Lq67JWTZLxFyZTdmi2I5YpV4nmINae47/preview"></iframe>
     </div>
   </div>
 
   <script>
-    // Sample data (replace with CSV import logic later)
-    const guests = [
-      { name: "Alice Smith", table: "1" },
-      { name: "Bob Johnson", table: "2" },
-      { name: "Charlie Davis", table: "3" },
-      { name: "David Brown", table: "2" },
-      { name: "Emily Clark", table: "1" },
+    const people = [
+      { name: "laval chung", displayName: "Laval Chung", table: "1" },
+      { name: "noleen chung", displayName: "Noleen Chung", table: "2" },
+      { name: "emma sugiono", displayName: "Emma Sugiono", table: "2" },
+      { name: "liam ranford", displayName: "Liam Ranford", table: "69" },
+      { name: "justin lee", displayName: "Justin Lee", table: "69" },
+      { name: "jiwoon kim", displayName: "Jiwoon Kim", table: "69" },
+      { name: "lewis he", displayName: "Lewis He", table: "69" }
+      // Add more people here
     ];
 
-    function filterGuests() {
-      const input = document.getElementById("searchInput").value.toLowerCase();
-      const results = document.getElementById("resultsContainer");
-      results.innerHTML = "";
+    document.getElementById('search').addEventListener('input', function () {
+      const input = this.value.toLowerCase().trim();
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+      if (!input) return;
 
-      if (input.length < 1) return;
-
-      const filtered = guests.filter(g =>
-        g.name.toLowerCase().includes(input)
-      );
-
+      const filtered = people.filter(p => p.name.includes(input));
       if (filtered.length === 0) {
-        results.innerHTML = `<div class="result">No matching names found.</div>`;
-      } else {
-        filtered.forEach(g => {
-          results.innerHTML += `<div class="result">${g.name} — Table ${g.table}</div>`;
-        });
-      }
-    }
-
-    function showPopup(type) {
-      const popup = document.getElementById("popup");
-      const image = document.getElementById("popupImage");
-
-      if (type === "floorplan") {
-        image.src = "https://drive.google.com/file/d/1iNK69kjkRtb_kOf3A30S3vqXz7ufEBya/view?usp=sharing";
-      } else if (type === "menu") {
-        image.src = "https://drive.google.com/file/d/16F1PHsWL9Rkrf5MFFftFo471JGn2pTn0/view?usp=sharing";
+        resultsDiv.innerHTML = '<div class="entry">No match found</div>';
+        return;
       }
 
-      popup.style.display = "flex";
+      filtered.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.textContent = `${p.displayName} — Table ${p.table}`;
+        resultsDiv.appendChild(div);
+      });
+    });
+
+    function openModal(type) {
+      document.getElementById(`${type}-modal`).style.display = 'block';
     }
 
-    function hidePopup() {
-      document.getElementById("popup").style.display = "none";
+    function closeModal(type) {
+      document.getElementById(`${type}-modal`).style.display = 'none';
     }
+
+    // Close modals on outside click
+    window.onclick = function(event) {
+      ['floor', 'menu'].forEach(type => {
+        const modal = document.getElementById(`${type}-modal`);
+        if (event.target == modal) modal.style.display = "none";
+      });
+    };
   </script>
-
 </body>
 </html>
