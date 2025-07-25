@@ -3,27 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Find Your Seat</title>
+  <title>Please Find Your Seat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Roboto&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Roboto', sans-serif;
       text-align: center;
       padding: 2rem;
-      background-color: #fdfdfd;
+      background: linear-gradient(to right, #fffdfd, #f7f3f0);
+      color: #333;
     }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      animation: fadeIn 1s ease-in-out;
+    }
+
     input[type="text"] {
-      padding: 10px;
-      font-size: 16px;
-      margin: 10px auto;
+      padding: 12px;
+      font-size: 18px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
       width: 90%;
       max-width: 400px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      transition: 0.3s;
     }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #aaa;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    }
+
     #results {
       margin-top: 2rem;
       font-size: 18px;
     }
+
     .entry {
-      padding: 0.5rem;
+      background-color: #fff;
+      margin: 0.5rem auto;
+      padding: 0.75rem 1.2rem;
+      border-radius: 10px;
+      max-width: 450px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .entry b {
+      font-weight: 600;
+      color: #444;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0 }
+      to { opacity: 1 }
     }
   </style>
 </head>
@@ -31,7 +73,7 @@
 
   <h1>Please Find Your Seat</h1>
 
-  <input type="text" id="search" placeholder="Enter your name..." />
+  <input type="text" id="search" placeholder="Start typing your name..." />
 
   <div id="results"></div>
 
@@ -44,6 +86,7 @@
       { name: "justin lee", displayName: "Justin Lee", table: "69" },
       { name: "jiwoon kim", displayName: "Jiwoon Kim", table: "69" },
       { name: "lewis he", displayName: "Lewis He", table: "69" }
+      // Add more entries as needed
     ];
 
     document.getElementById('search').addEventListener('input', function () {
@@ -61,7 +104,7 @@
       filtered.forEach(p => {
         const div = document.createElement('div');
         div.className = 'entry';
-        div.textContent = `${p.displayName} — Table ${p.table}`;
+        div.innerHTML = `<span>${p.displayName} — <b>Table ${p.table}</b></span>`;
         resultsDiv.appendChild(div);
       });
     });
