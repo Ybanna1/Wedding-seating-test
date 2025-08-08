@@ -4,105 +4,258 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Find Your Seat</title>
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap" rel="stylesheet">
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+
   <style>
-    :root{ --brand:#dcc17a; }
+    :root{ --brand:#dcc17a; --ink:#333; --bg1:#fdfbfb; --bg2:#ebedee; }
     *{box-sizing:border-box}
-    body { font-family: 'Dancing Script', cursive; text-align: center; padding: 2rem; background: linear-gradient(to right, #fdfbfb, #ebedee); }
-    h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-    input[type="text"] { padding: 12px; font-size: 18px; border-radius: 10px; border: 1px solid #ccc; width: 90%; max-width: 480px; margin: 1rem auto; }
-    #results { margin-top: 1.25rem; font-size: 20px; }
-    .entry { padding: 0.7rem; background: #fff; margin: 0.5rem auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); width: 90%; max-width: 520px; }
-    .links { margin-top: 1.25rem; }
-    .links a { display:inline-block; margin: 0.5rem; text-decoration: none; color:#333; background: #f8e1f4; padding: 10px 18px; border-radius: 8px; font-size: 1.1rem; transition: all 0.3s ease; }
-    .links a:hover { background: #e3c8eb; }
-    .popup { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); }
-    .popup-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; padding: 20px; border-radius: 10px; max-width: 92%; max-height: 86%; overflow: auto; }
-    .popup-content img { width: 100%; height: auto; border-radius: 10px; }
-    .close { float: right; cursor: pointer; font-size: 20px; margin-top: -10px; }
+
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Dancing Script", cursive;
+      text-align:center;
+      padding:2rem 1rem 3rem;
+      background:linear-gradient(to right, var(--bg1), var(--bg2));
+      color:var(--ink);
+    }
+
+    h1{
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      margin:0 0 1rem;
+      color:#222;
+    }
+
+    .lead{
+      margin:.25rem 0 1rem;
+      opacity:.8;
+    }
+
+    /* Search */
+    .search-wrap{
+      display:flex;
+      justify-content:center;
+      gap:.5rem;
+      flex-wrap:wrap;
+    }
+    input[type="text"]{
+      padding:12px 14px;
+      font-size:18px;
+      border-radius:12px;
+      border:1px solid #ccc;
+      width:min(92vw, 520px);
+      background:#fff;
+      outline-color:var(--brand);
+    }
+
+    /* Results */
+    #results{ margin-top:1rem; font-size:18px;}
+    .entry{
+      padding:.8rem 1rem;
+      background:#fff;
+      margin:.5rem auto;
+      border-radius:10px;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+      width:min(92vw, 560px);
+      text-align:left;
+    }
+
+    /* Buttons */
+    .btns{ margin-top:1.25rem; display:flex; justify-content:center; gap:.6rem; flex-wrap:wrap; }
+    .btn{
+      appearance:none; border:0; cursor:pointer;
+      padding:10px 18px; border-radius:10px;
+      background:#f8e1f4; color:#333; font-size:1.05rem;
+      transition:transform .08s ease, background .25s ease, box-shadow .25s ease;
+      box-shadow:0 2px 6px rgba(0,0,0,.08);
+    }
+    .btn:hover{ background:#e3c8eb }
+    .btn:active{ transform:translateY(1px) }
+    .btn--primary{ background:var(--brand); color:#211; }
+    .btn--primary:hover{ filter:saturate(1.05) brightness(1.01); }
+
+    /* Popups */
+    .popup{
+      display:none; position:fixed; inset:0; z-index:1000;
+      background:rgba(0,0,0,.6);
+      padding: clamp(12px, 3vw, 28px);
+    }
+    .popup[aria-hidden="false"]{ display:block; }
+    .popup__content{
+      margin:auto;
+      background:#fff; padding:16px;
+      width:min(92vw, 900px); max-height:86vh;
+      border-radius:14px; overflow:auto;
+      box-shadow:0 10px 24px rgba(0,0,0,.25);
+      position:relative;
+      animation:pop .18s ease-out;
+    }
+    @keyframes pop{ from{ transform:scale(.97); opacity:.7 } to{ transform:scale(1); opacity:1 } }
+
+    .popup__close{
+      position:absolute; top:10px; right:12px;
+      background:transparent; border:0; font-size:26px; line-height:1;
+      cursor:pointer; color:#666;
+    }
+    .popup__img{ width:100%; height:auto; border-radius:10px; display:block; }
+
+    /* Hide focus outlines until keyboard use */
+    :focus-visible{ outline:2px solid var(--brand); outline-offset:2px; border-radius:6px; }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js" defer></script>
 </head>
 <body>
   <h1>Please Find Your Seat</h1>
+  <p class="lead">Type your name below. We’ll show your table number.</p>
 
-  <input type="text" id="search" placeholder="Enter your name..." aria-label="Search names" />
-  <div id="results"></div>
-
-  <div class="links">
-    <a href="#" onclick="openPopup('floorplanPopup')">View Floor Plan</a>
-    <a href="#" onclick="openPopup('menuPopup')">View Menu</a>
-    <a id="lenseAnchor" href="#" target="_blank" rel="noopener">Open Lense</a>
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="Enter your name…" aria-label="Search names" autocomplete="off"/>
   </div>
 
-  <div id="floorplanPopup" class="popup" role="dialog" aria-modal="true" aria-label="Floor plan">
-    <div class="popup-content">
-      <span class="close" onclick="closePopup('floorplanPopup')" aria-label="Close">&times;</span>
-      <img id="floorImg" src="floorplan.jpg" alt="Floor Plan" loading="lazy">
+  <div id="results" role="region" aria-live="polite"></div>
+
+  <div class="btns" aria-label="Helpful links">
+    <button type="button" class="btn" data-open="#floorplanPopup">View Floor Plan</button>
+    <button type="button" class="btn" data-open="#menuPopup">View Menu</button>
+    <a id="lenseAnchor" class="btn btn--primary" href="#" target="_blank" rel="noopener">Open Lense</a>
   </div>
 
-  <div id="menuPopup" class="popup" role="dialog" aria-modal="true" aria-label="Menu">
-    <div class="popup-content">
-      <span class="close" onclick="closePopup('menuPopup')" aria-label="Close">&times;</span>
-      <img id="menuImg" src="menu.jpg" alt="Menu" loading="lazy">
+  <!-- Floorplan Modal -->
+  <div id="floorplanPopup" class="popup" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Floor plan">
+    <div class="popup__content" role="document">
+      <button class="popup__close" type="button" aria-label="Close">&times;</button>
+      <img class="popup__img" src="floorplan.jpg" alt="Floor plan" loading="lazy">
+    </div>
+  </div>
+
+  <!-- Menu Modal -->
+  <div id="menuPopup" class="popup" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Menu">
+    <div class="popup__content" role="document">
+      <button class="popup__close" type="button" aria-label="Close">&times;</button>
+      <img class="popup__img" src="menu.jpg" alt="Wedding menu" loading="lazy">
     </div>
   </div>
 
   <script>
-    const CSV_URL = "https://raw.githubusercontent.com/Ybanna1/Wedding-seating-test/main/floorplan.csv";
+  // ========= Data =========
+  const CSV_URL = "https://raw.githubusercontent.com/Ybanna1/Wedding-seating-test/main/floorplan.csv";
 
-    async function loadPeopleFromCSV() {
-      const url = CSV_URL + "?cacheBust=" + Date.now();
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error("CSV fetch failed");
-      const csvText = await res.text();
-      const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+  // ========= Utils =========
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-      return parsed.data
-        .filter(r => (r.displayName || "").trim())
-        .map(r => ({
-          displayName: String(r.displayName).trim(),
-          name: (r.name ? String(r.name) : String(r.displayName)).toLowerCase().trim(),
-          table: r.table ? String(r.table).trim() : ""
-        }));
-    }
+  // Debounce for search
+  function debounce(fn, wait=150){
+    let t; return (...args) => { clearTimeout(t); t=setTimeout(() => fn(...args), wait); }
+  }
 
-    (async function initSearch(){
-      let people = [];
-      try {
-        people = await loadPeopleFromCSV();
-      } catch {
-        people = [];
+  // ========= Search =========
+  async function loadPeopleFromCSV(){
+    const url = CSV_URL + "?cb=" + Date.now();
+    const res = await fetch(url, { cache:'no-store' });
+    if(!res.ok) throw new Error('CSV fetch failed');
+    const csv = await res.text();
+    const parsed = Papa.parse(csv, { header:true, skipEmptyLines:true });
+    const rows = parsed.data || [];
+    return rows
+      .filter(r => (r.displayName || '').trim())
+      .map(r => ({
+        displayName: String(r.displayName).trim(),
+        name: (r.name ? String(r.name) : String(r.displayName)).toLowerCase().trim(),
+        table: r.table ? String(r.table).trim() : ''
+      }));
+  }
+
+  async function initSearch(){
+    const resultsDiv = $('#results');
+    const input = $('#search');
+
+    let people = [];
+    try { people = await loadPeopleFromCSV(); }
+    catch(e){ console.error(e); resultsDiv.innerHTML = '<div class="entry">Could not load guest list.</div>'; }
+
+    const fuse = new Fuse(people, {
+      keys:['name','displayName'],
+      threshold:0.3,
+      ignoreLocation:true
+    });
+
+    const render = debounce(() => {
+      const q = input.value.trim();
+      resultsDiv.innerHTML = '';
+      if(!q) return;
+
+      const found = fuse.search(q);
+      if(!found.length){
+        resultsDiv.innerHTML = '<div class="entry">No match found</div>';
+        return;
       }
-
-      const fuse = new Fuse(people, { keys: ["name", "displayName"], threshold: 0.3, ignoreLocation: true });
-      const searchEl = document.getElementById("search");
-      const resultsDiv = document.getElementById("results");
-
-      searchEl.addEventListener("input", function(){
-        const q = this.value.trim();
-        resultsDiv.innerHTML = "";
-        if (!q) return;
-
-        const out = fuse.search(q);
-        if (!out.length) {
-          resultsDiv.innerHTML = '<div class="entry">No match found</div>';
-          return;
-        }
-        out.slice(0,50).forEach(({ item: p }) => {
-          const div = document.createElement("div");
-          div.className = "entry";
-          div.textContent = p.table ? `${p.displayName} — Table ${p.table}` : p.displayName;
-          resultsDiv.appendChild(div);
-        });
+      found.slice(0,50).forEach(({ item:p }) => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.textContent = p.table ? `${p.displayName} — Table ${p.table}` : p.displayName;
+        resultsDiv.appendChild(div);
       });
-    })();
+    }, 160);
 
-    function openPopup(id){ document.getElementById(id).style.display='block'; }
-    function closePopup(id){ document.getElementById(id).style.display='none'; }
-    window.openPopup = openPopup; window.closePopup = closePopup;
+    input.addEventListener('input', render);
+  }
 
+  // ========= Modals =========
+  function openModal(sel){
+    const m = document.querySelector(sel);
+    if(!m) return;
+    m.setAttribute('aria-hidden','false');
+    m.dataset.prevFocus = document.activeElement ? '1' : '0';
+    // focus close button for accessibility
+    const closeBtn = m.querySelector('.popup__close');
+    if(closeBtn) closeBtn.focus();
+  }
+  function closeModal(el){
+    const m = typeof el === 'string' ? $(el) : el.closest('.popup');
+    if(!m) return;
+    m.setAttribute('aria-hidden','true');
+  }
+
+  function setupModals(){
+    // open buttons
+    $$('.btn[data-open]').forEach(btn => {
+      btn.addEventListener('click', () => openModal(btn.dataset.open));
+    });
+
+    // close on close button
+    $$('.popup .popup__close').forEach(btn => {
+      btn.addEventListener('click', e => closeModal(e.target));
+    });
+
+    // click outside content to close
+    $$('.popup').forEach(p => {
+      p.addEventListener('click', e => {
+        if(e.target === p) closeModal(p);
+      });
+    });
+
+    // ESC to close
+    document.addEventListener('keydown', e => {
+      if(e.key === 'Escape'){
+        $$('.popup[aria-hidden="false"]').forEach(p => closeModal(p));
+      }
+    });
+  }
+
+  // ========= Boot =========
+  (async function(){
+    setupModals();
+    await initSearch();
+
+    // Example: set the "Lense" link dynamically if needed
+    // $('#lenseAnchor').href = 'https://example.com/lense';
+  })();
   </script>
 </body>
 </html>
