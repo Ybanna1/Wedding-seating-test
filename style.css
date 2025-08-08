@@ -1,0 +1,4 @@
+/* Hide admin controls for everyone by default */
+#adminControls {
+  display: none !important;
+}
