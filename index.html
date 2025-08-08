@@ -6,166 +6,128 @@
   <title>Find Your Seat</title>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap" rel="stylesheet">
   <style>
+    :root{
+      --brand:#dcc17a;
+    }
+    *{box-sizing:border-box}
     body {
       font-family: 'Dancing Script', cursive;
       text-align: center;
       padding: 2rem;
       background: linear-gradient(to right, #fdfbfb, #ebedee);
     }
-
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
+    h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+    input[type="text"], input[type="url"], input[type="file"], .btn {
+      padding: 12px; font-size: 18px; border-radius: 10px; border: 1px solid #ccc;
     }
-
-    input[type="text"] {
-      padding: 12px;
-      font-size: 18px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      width: 90%;
-      max-width: 400px;
-      margin: 1rem auto;
-    }
-
-    #results {
-      margin-top: 2rem;
-      font-size: 20px;
-    }
-
-    .entry {
-      padding: 0.7rem;
-      background: #fff;
-      margin: 0.5rem auto;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      width: 90%;
-      max-width: 400px;
-    }
-
-    .links {
-      margin-top: 2rem;
-    }
-
-    .links a {
-      display: inline-block;
-      margin: 0.5rem;
-      text-decoration: none;
-      color: #4a4a4a;
-      background: #f8e1f4;
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      transition: all 0.3s ease;
-    }
-
-    .links a:hover {
-      background: #e3c8eb;
-    }
-
-    .popup {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
-    }
-
-    .popup-content {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 90%;
-      max-height: 80%;
-      overflow: auto;
-    }
-
-    .popup-content img {
-      width: 100%;
-      height: auto;
-      border-radius: 10px;
-    }
-
-    .close {
-      float: right;
-      cursor: pointer;
-      font-size: 20px;
-      margin-top: -10px;
-    }
+    #search { width: 90%; max-width: 480px; margin: 1rem auto; }
+    #results { margin-top: 1.25rem; font-size: 20px; }
+    .entry { padding: 0.7rem; background: #fff; margin: 0.5rem auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); width: 90%; max-width: 520px; }
+    .grid { display:grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items: start; margin: 1.25rem auto; max-width: 980px; }
+    .card { background:#fff; border-radius:12px; padding:14px; text-align:left; box-shadow:0 2px 6px rgba(0,0,0,.08); }
+    .card h3 { margin:0 0 8px; font-size: 1.25rem; }
+    .card small{display:block; opacity:.7; margin-top:6px}
+    .links { margin-top: 1.25rem; }
+    .links a { display:inline-block; margin: 0.5rem; text-decoration: none; color:#333; background: #f8e1f4; padding: 10px 18px; border-radius: 8px; font-size: 1.1rem; transition: all 0.3s ease; }
+    .links a:hover { background: #e3c8eb; }
+    .popup { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); }
+    .popup-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #fff; padding: 20px; border-radius: 10px; max-width: 92%; max-height: 86%; overflow: auto; }
+    .popup-content img { width: 100%; height: auto; border-radius: 10px; }
+    .close { float: right; cursor: pointer; font-size: 20px; margin-top: -10px; }
+    .btn { background: var(--brand); color:#111; cursor:pointer; border:none; }
+    .btn.secondary{ background:#efefef; }
+    .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .qr-wrap{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+    .muted{opacity:.7}
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
-
   <h1>Please Find Your Seat</h1>
-
-  <input type="text" id="search" placeholder="Enter your name..." />
-
+  <input type="text" id="search" placeholder="Enter your name..." aria-label="Search names" />
   <div id="results"></div>
-
   <div class="links">
     <a href="#" onclick="openPopup('floorplanPopup')">View Floor Plan</a>
     <a href="#" onclick="openPopup('menuPopup')">View Menu</a>
+    <a id="lenseAnchor" href="#" target="_blank" rel="noopener">Open Lense</a>
   </div>
-
-  <!-- Floorplan Popup -->
+  <section class="grid" id="adminControls" aria-label="Admin controls">
+    <div class="card" id="csvCard">
+      <h3>CSV Upload</h3>
+      <div class="row">
+        <input type="file" id="csvInput" accept=".csv" />
+        <button class="btn" id="loadCsvBtn">Load</button>
+        <button class="btn secondary" id="downloadSample">Sample CSV</button>
+      </div>
+    </div>
+    <div class="card" id="menuCard">
+      <h3>Menu Upload</h3>
+      <div class="row">
+        <input type="file" id="menuUpload" accept="image/*" />
+        <button class="btn" id="saveMenu">Save</button>
+      </div>
+    </div>
+    <div class="card" id="floorCard">
+      <h3>Floor Plan Upload</h3>
+      <div class="row">
+        <input type="file" id="floorUpload" accept="image/*" />
+        <button class="btn" id="saveFloor">Save</button>
+      </div>
+    </div>
+    <div class="card" id="lenseCard">
+      <h3>Lense Link</h3>
+      <div class="row">
+        <input type="url" id="lenseUrl" placeholder="https://your-lense-link" style="flex:1" />
+        <button class="btn" id="saveLense">Save</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Instant QR Code</h3>
+      <div class="qr-wrap">
+        <div id="qrcode"></div>
+        <button class="btn" id="downloadQR">Download QR</button>
+      </div>
+    </div>
+  </section>
   <div id="floorplanPopup" class="popup">
     <div class="popup-content">
       <span class="close" onclick="closePopup('floorplanPopup')">&times;</span>
-      <img src="https://drive.google.com/uc?export=view&id=16F1PHsWL9Rkrf5MFFftFo471JGn2pTn0" alt="Floor Plan">
+      <img id="floorImg" src="https://drive.google.com/uc?export=view&id=16F1PHsWL9Rkrf5MFFftFo471JGn2pTn0" alt="Floor Plan" loading="lazy">
     </div>
   </div>
-
-  <!-- Menu Popup -->
   <div id="menuPopup" class="popup">
     <div class="popup-content">
       <span class="close" onclick="closePopup('menuPopup')">&times;</span>
-      <img src="https://drive.google.com/uc?export=view&id=1Lq67JWTZLxFyZTdmi2I5YpV4nmINae47" alt="Menu">
+      <img id="menuImg" src="https://drive.google.com/uc?export=view&id=1Lq67JWTZLxFyZTdmi2I5YpV4nmINae47" alt="Menu" loading="lazy">
     </div>
   </div>
-
   <script>
-    const people = [
-      { name: "laval chung", displayName: "Laval Chung", table: "1" },
-      { name: "noleen chung", displayName: "Noleen Chung", table: "2" },
-      { name: "emma sugiono", displayName: "Emma Sugiono", table: "2" },
-      { name: "liam ranford", displayName: "Liam Ranford", table: "69" },
-      { name: "justin lee", displayName: "Justin Lee", table: "69" },
-      { name: "jiwoon kim", displayName: "Jiwoon Kim", table: "69" },
-      { name: "lewis he", displayName: "Lewis He", table: "69" },
-      // Add more entries...
-    ];
-
-    document.getElementById('search').addEventListener('input', function () {
-      const input = this.value.toLowerCase().trim();
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = '';
-      if (input === '') return;
-
-      const filtered = people.filter(p => p.name.includes(input));
-      if (filtered.length === 0) {
-        resultsDiv.innerHTML = '<div class="entry">No match found</div>';
-        return;
-      }
-
-      filtered.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'entry';
-        div.textContent = `${p.displayName} — Table ${p.table}`;
-        resultsDiv.appendChild(div);
-      });
-    });
-
-    function openPopup(id) {
-      document.getElementById(id).style.display = 'block';
-    }
-
-    function closePopup(id) {
-      document.getElementById(id).style.display = 'none';
-    }
+    const LS_KEYS = {PEOPLE:'findseat.people',MENU:'findseat.menuImg',FLOOR:'findseat.floorImg',LENSE:'findseat.lenseUrl'};
+    const defaultPeople = [{name:"laval chung",displayName:"Laval Chung",table:"1"}];
+    let people = loadPeople();
+    let fuse = buildFuse(people);
+    function loadPeople(){const raw=localStorage.getItem(LS_KEYS.PEOPLE);return raw?JSON.parse(raw):defaultPeople}
+    function savePeople(arr){localStorage.setItem(LS_KEYS.PEOPLE,JSON.stringify(arr))}
+    function buildFuse(data){return new Fuse(data,{keys:["name","displayName"],threshold:0.3,ignoreLocation:true})}
+    document.getElementById('search').addEventListener('input',function(){const q=this.value.trim();const res=document.getElementById('results');res.innerHTML='';if(!q)return;const out=fuse.search(q);if(!out.length){res.innerHTML='<div class="entry">No match found</div>';return}out.forEach(r=>{const d=document.createElement('div');d.className='entry';d.textContent=`${r.item.displayName} — Table ${r.item.table}`;res.appendChild(d)})});
+    function openPopup(id){document.getElementById(id).style.display='block'}
+    function closePopup(id){document.getElementById(id).style.display='none'}
+    window.openPopup=openPopup;window.closePopup=closePopup;
+    const menuImgEl=document.getElementById('menuImg');const floorImgEl=document.getElementById('floorImg');
+    if(localStorage.getItem(LS_KEYS.MENU)){menuImgEl.src=localStorage.getItem(LS_KEYS.MENU);document.getElementById('menuCard').remove()}
+    if(localStorage.getItem(LS_KEYS.FLOOR)){floorImgEl.src=localStorage.getItem(LS_KEYS.FLOOR);document.getElementById('floorCard').remove()}
+    document.getElementById('saveMenu').onclick=async()=>{const f=document.getElementById('menuUpload').files[0];if(!f)return alert('Choose an image');const d=await fileToDataURL(f);localStorage.setItem(LS_KEYS.MENU,d);menuImgEl.src=d;document.getElementById('menuCard').remove();alert('Menu saved')}
+    document.getElementById('saveFloor').onclick=async()=>{const f=document.getElementById('floorUpload').files[0];if(!f)return alert('Choose an image');const d=await fileToDataURL(f);localStorage.setItem(LS_KEYS.FLOOR,d);floorImgEl.src=d;document.getElementById('floorCard').remove();alert('Floor plan saved')}
+    function fileToDataURL(file){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file)})}
+    const lenseAnchor=document.getElementById('lenseAnchor');const lenseInput=document.getElementById('lenseUrl');
+    if(localStorage.getItem(LS_KEYS.LENSE)){lenseAnchor.href=localStorage.getItem(LS_KEYS.LENSE);lenseInput.value=localStorage.getItem(LS_KEYS.LENSE);document.getElementById('lenseCard').remove()}
+    document.getElementById('saveLense').onclick=()=>{const url=lenseInput.value.trim();if(!/^https?:\/\//.test(url))return alert('Invalid URL');localStorage.setItem(LS_KEYS.LENSE,url);lenseAnchor.href=url;document.getElementById('lenseCard').remove();alert('Lense saved')}
+    document.getElementById('loadCsvBtn').onclick=()=>{const f=document.getElementById('csvInput').files[0];if(!f)return alert('Choose CSV');Papa.parse(f,{header:true,complete:res=>{const rows=res.data.filter(r=>r.displayName).map(r=>({name:r.displayName.toLowerCase(),displayName:r.displayName,table:r.table}));people=rows;savePeople(rows);fuse=buildFuse(rows);document.getElementById('csvCard').remove();alert('CSV loaded')}})}
+    document.getElementById('downloadSample').onclick=()=>{const s='displayName,table\nLaval Chung,1\n';const b=new Blob([s],{type:'text/csv'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='sample.csv';a.click();URL.revokeObjectURL(u)}
+    function renderQR(){const el=document.getElementById('qrcode');el.innerHTML='';QRCode.toCanvas(window.location.href,{width:180},(e,canvas)=>{if(!e)el.appendChild(canvas)})}renderQR();
+    document.getElementById('downloadQR').onclick=()=>{const c=document.querySelector('#qrcode canvas');if(!c)return;const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='findyourseat-qr.png';a.click()}
   </script>
 </body>
 </html>
