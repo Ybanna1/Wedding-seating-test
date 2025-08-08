@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Find Your Seat – Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap" rel="stylesheet">
+  <style>
+    :root{ --brand:#dcc17a; }
+    *{ box-sizing:border-box }
+    body{ font-family:'Dancing Script', cursive; padding:2rem; background:linear-gradient(to right,#fdfbfb,#ebedee); }
+    h1{ font-size:2rem; margin:0 0 1rem; }
+    .grid{ display:grid; gap:12px; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); max-width: 1100px; margin: 0 auto; }
+    .card{ background:#fff; border-radius:12px; padding:14px; box-shadow:0 2px 6px rgba(0,0,0,.08); }
+    .card h3{ margin:0 0 8px; font-size:1.25rem; }
+    .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+    input[type="file"], input[type="url"], .btn { padding:10px; border-radius:10px; border:1px solid #ccc; font-size:16px }
+    .btn{ background:var(--brand); color:#111; border:none; cursor:pointer }
+    .btn.secondary{ background:#efefef }
+    small{ display:block; opacity:.7; margin-top:6px }
+    img.preview{ max-width:100%; border-radius:8px; display:block; margin-top:10px }
+    textarea{ width:100%; min-height:140px; border-radius:10px; border:1px solid #ccc; padding:10px; font-size:14px }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+  <h1>Find Your Seat – Admin</h1>
+  <p>Anything you upload/save here is stored <b>locally</b> in the browser via <code>localStorage</code> and read by <code>index.html</code>.</p>
+
+  <section class="grid">
+    <div class="card">
+      <h3>CSV Upload (Guests)</h3>
+      <div class="row">
+        <input type="file" id="csvInput" accept=".csv" />
+        <button class="btn" id="loadCsvBtn">Load</button>
+        <button class="btn secondary" id="downloadSample">Sample CSV</button>
+      </div>
+      <small>Columns: <b>displayName</b>, <b>table</b>. (Optional: <b>name</b> – we derive it if missing)</small>
+      <small id="csvStatus"></small>
+    </div>
+
+    <div class="card">
+      <h3>Menu Upload</h3>
+      <div class="row">
+        <input type="file" id="menuUpload" accept="image/*" />
+        <button class="btn" id="saveMenu">Save</button>
+      </div>
+      <img id="menuPreview" class="preview" alt="Menu preview" />
+      <small id="menuStatus"></small>
+    </div>
+
+    <div class="card">
+      <h3>Floor Plan Upload</h3>
+      <div class="row">
+        <input type="file" id="floorUpload" accept="image/*" />
+        <button class="btn" id="saveFloor">Save</button>
+      </div>
+      <img id="floorPreview" class="preview" alt="Floor plan preview" />
+      <small id="floorStatus"></small>
+    </div>
+
+    <div class="card">
+      <h3>Lense Link</h3>
+      <div class="row">
+        <input type="url" id="lenseUrl" placeholder="https://your-lense-link" style="flex:1" />
+        <button class="btn" id="saveLense">Save</button>
+      </div>
+      <small id="lenseStatus"></small>
+    </div>
+
+    <div class="card">
+      <h3>Paste Names (optional)</h3>
+      <small>Paste raw names (separated by commas, new lines, or tabs). We will assign random tables (1–20).</small>
+      <textarea id="namesBlob" placeholder="One name per line or separated by commas/tabs"></textarea>
+      <div class="row">
+        <button class="btn" id="addNames">Add to Guest List</button>
+      </div>
+      <small id="namesStatus"></small>
+    </div>
+
+    <div class="card">
+      <h3>Maintenance</h3>
+      <div class="row">
+        <button class="btn secondary" id="exportPeople">Export Guests CSV</button>
+        <button class="btn secondary" id="clearAll">Clear All Local Data</button>
+      </div>
+      <small>Clearing data only affects this browser/device.</small>
+    </div>
+  </section>
+
+  <script>
+    const LS_KEYS = { PEOPLE:'findseat.people', MENU:'findseat.menuImg', FLOOR:'findseat.floorImg', LENSE:'findseat.lenseUrl' };
+
+    // --- Helpers ---
+    function fileToDataURL(file){
+      return new Promise((resolve, reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); });
+    }
+    function savePeople(arr){ localStorage.setItem(LS_KEYS.PEOPLE, JSON.stringify(arr)); }
+    function loadPeople(){ try{ const raw=localStorage.getItem(LS_KEYS.PEOPLE); return raw? JSON.parse(raw):[] }catch(e){ return [] } }
+    function normalisePerson(p){
+      const dn=(p.displayName||'').toString().trim();
+      const nm=(p.name||dn).toString().toLowerCase().trim();
+      return { name:nm, displayName: dn || dnFromName(nm), table: (p.table||'').toString().trim() };
+    }
+    function dnFromName(n){ return n.replace(/\b\w/g, c=>c.toUpperCase()); }
+
+    // --- CSV ---
+    const csvInput = document.getElementById('csvInput');
+    document.getElementById('loadCsvBtn').onclick = ()=>{
+      const f = csvInput.files && csvInput.files[0];
+      if(!f) return alert('Choose a CSV');
+      Papa.parse(f, { header:true, skipEmptyLines:true, complete: res => {
+        try{
+          const rows = res.data.filter(r=>r.displayName || r.name).map(r=> normalisePerson({
+            displayName: r.displayName,
+            name: r.name,
+            table: r.table
+          }));
+          if(!rows.length) throw new Error('No usable rows');
+          savePeople(rows);
+          document.getElementById('csvStatus').textContent = `Saved ${rows.length} guests to localStorage.`;
+        }catch(err){ alert('CSV problem: '+ err.message); }
+      }});
+    };
+
+    document.getElementById('downloadSample').onclick = ()=>{
+      const sample = 'displayName,table\nLaval Chung,1\nNoleen Chung,2\n';
+      const blob = new Blob([sample], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'sample-guests.csv'; a.click(); URL.revokeObjectURL(url);
+    };
+
+    // --- Images (Menu/Floor) ---
+    const menuPreview = document.getElementById('menuPreview');
+    const floorPreview = document.getElementById('floorPreview');
+
+    (function hydratePreviews(){
+      const m = localStorage.getItem(LS_KEYS.MENU); if(m){ menuPreview.src = m; }
+      const f = localStorage.getItem(LS_KEYS.FLOOR); if(f){ floorPreview.src = f; }
+      const l = localStorage.getItem(LS_KEYS.LENSE); if(l){ document.getElementById('lenseUrl').value = l; }
+    })();
+
+    document.getElementById('saveMenu').onclick = async ()=>{
+      const f = document.getElementById('menuUpload').files[0];
+      if(!f) return alert('Choose an image');
+      const dataUrl = await fileToDataURL(f);
+      localStorage.setItem(LS_KEYS.MENU, dataUrl);
+      menuPreview.src = dataUrl; document.getElementById('menuStatus').textContent = 'Menu image saved to localStorage.';
+    };
+
+    document.getElementById('saveFloor').onclick = async ()=>{
+      const f = document.getElementById('floorUpload').files[0];
+      if(!f) return alert('Choose an image');
+      const dataUrl = await fileToDataURL(f);
+      localStorage.setItem(LS_KEYS.FLOOR, dataUrl);
+      floorPreview.src = dataUrl; document.getElementById('floorStatus').textContent = 'Floor plan image saved to localStorage.';
+    };
+
+    // --- Lense link ---
+    document.getElementById('saveLense').onclick = ()=>{
+      const url = document.getElementById('lenseUrl').value.trim();
+      if(!/^https?:\/\//i.test(url)) return alert('Enter a valid URL starting with http(s)://');
+      localStorage.setItem(LS_KEYS.LENSE, url);
+      document.getElementById('lenseStatus').textContent = 'Lense URL saved to localStorage.';
+    };
+
+    // --- Names paste (assign random tables 1–20) ---
+    document.getElementById('addNames').onclick = ()=>{
+      const blob = document.getElementById('namesBlob').value;
+      if(!blob.trim()) return alert('Paste some names first');
+      const parts = blob.split(/[\n,\t]+/).map(s=>s.replace(/\*/g,'').trim()).filter(Boolean);
+      const uniq = Array.from(new Set(parts));
+      const current = loadPeople();
+      const added = uniq.map(n=> normalisePerson({ displayName:n, name:n.toLowerCase(), table: String(1 + Math.floor(Math.random()*20)) }));
+      const merged = [...current, ...added];
+      savePeople(merged);
+      document.getElementById('namesStatus').textContent = `Added ${added.length} names (random tables 1–20). Total now ${merged.length}.`;
+    };
+
+    // --- Export / Clear ---
+    document.getElementById('exportPeople').onclick = ()=>{
+      const people = loadPeople();
+      if(!people.length) return alert('No guests saved.');
+      const header = 'displayName,table\n';
+      const rows = people.map(p => `${p.displayName.replace(/,/g,' ')},${p.table}`).join('\n');
+      const blob = new Blob([header + rows], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'guests.csv'; a.click(); URL.revokeObjectURL(url);
+    };
+
+    document.getElementById('clearAll').onclick = ()=>{
+      if(!confirm('This clears localStorage for this site on THIS device only. Continue?')) return;
+      Object.values(LS_KEYS).forEach(k=> localStorage.removeItem(k));
+      menuPreview.removeAttribute('src'); floorPreview.removeAttribute('src');
+      document.getElementById('lenseUrl').value = '';
+      document.getElementById('csvStatus').textContent = '';
+      document.getElementById('menuStatus').textContent = '';
+      document.getElementById('floorStatus').textContent = '';
+      document.getElementById('lenseStatus').textContent = '';
+      document.getElementById('namesStatus').textContent = '';
+      alert('Cleared.');
+    };
+  </script>
+</body>
+</html>
